@@ -74,6 +74,9 @@ class MainActivity :
         Runnable { registerMessageListener(uiState.generation) }
     private var refreshGeneration = 0
     private var navigationServiceRequested = false
+    internal var navigationServiceController: (Context, Boolean) -> Unit = { context, active ->
+        if (active) WearNavigationService.start(context) else WearNavigationService.stop(context)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -361,7 +364,7 @@ class MainActivity :
 
         if (mode == WearNavigationMode.NORMAL) {
             if (navigationServiceRequested) {
-                WearNavigationService.stop(this)
+                navigationServiceController(this, false)
                 navigationServiceRequested = false
             }
             cancelStaleDetailsTimer()
@@ -372,7 +375,7 @@ class MainActivity :
 
         if (!navigationServiceRequested) {
             // This is triggered from the visible Activity, not a background Data Layer callback.
-            WearNavigationService.start(this)
+            navigationServiceController(this, true)
             navigationServiceRequested = true
         }
         subtitle.setText(R.string.wear_navigation_active_message)
