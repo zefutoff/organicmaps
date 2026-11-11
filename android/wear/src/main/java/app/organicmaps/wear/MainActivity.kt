@@ -73,6 +73,7 @@ class MainActivity :
     private val messageListenerRetryRunnable =
         Runnable { registerMessageListener(uiState.generation) }
     private var refreshGeneration = 0
+    private var navigationServiceRequested = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -359,12 +360,21 @@ class MainActivity :
         uiState.setMode(mode)
 
         if (mode == WearNavigationMode.NORMAL) {
+            if (navigationServiceRequested) {
+                WearNavigationService.stop(this)
+                navigationServiceRequested = false
+            }
             cancelStaleDetailsTimer()
             subtitle.setText(R.string.wear_no_navigation_message)
             renderNavigationDetails(null)
             return
         }
 
+        if (!navigationServiceRequested) {
+            // This is triggered from the visible Activity, not a background Data Layer callback.
+            WearNavigationService.start(this)
+            navigationServiceRequested = true
+        }
         subtitle.setText(R.string.wear_navigation_active_message)
         renderNavigationDetails(uiState.details)
     }
