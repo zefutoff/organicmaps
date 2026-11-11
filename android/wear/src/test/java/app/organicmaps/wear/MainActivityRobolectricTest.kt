@@ -71,6 +71,7 @@ class MainActivityRobolectricTest {
     }
 
     private fun createActivity() = Robolectric.buildActivity(MainActivity::class.java).apply {
+        get().navigationServiceController = { _, _ -> }
         get().wearClientsFactory = {
             WearClients(dataClient, messageClient, capabilityClient, activeOwner)
         }
