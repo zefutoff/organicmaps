@@ -67,10 +67,8 @@ class WearNavigationService :
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!started) {
             started = true
-            val generation = state.updateMode(WearNavigationMode.NAVIGATION)
             // Must happen promptly after startForegroundService(), before asynchronous reads.
             startForeground(NOTIFICATION_ID, buildNotification())
-            registerMessageListener(generation)
             registerStateListener()
             registerPhoneCapabilityListener()
         }
@@ -196,7 +194,13 @@ class WearNavigationService :
             items.release()
         }
 
-        if (isCurrent(generation) && mode != WearNavigationMode.NAVIGATION) stopSelf()
+        if (!isCurrent(generation)) return
+        if (mode != WearNavigationMode.NAVIGATION) {
+            stopSelf()
+        } else if (state.mode != WearNavigationMode.NAVIGATION) {
+            // Do not advertise the watch capability until the phone's mode is verified.
+            registerMessageListener(state.updateMode(WearNavigationMode.NAVIGATION))
+        }
     }
 
     private fun isCurrent(generation: Int): Boolean = started && generation == refreshGeneration
